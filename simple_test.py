@@ -41,7 +41,7 @@ def test_create_recipe():
         "name": "Тестовый рецепт",
         "cooking_time": 30,
         "ingredients": "тестовые ингредиенты",
-        "description": "тестовое описание"
+        "description": "тестовое описание",
     }
 
     response = client.post("/recipes", json=recipe_data)
@@ -60,7 +60,7 @@ def test_get_recipe_by_id():
         "name": "Рецепт для деталей",
         "cooking_time": 40,
         "ingredients": "ингредиенты",
-        "description": "описание"
+        "description": "описание",
     }
     create_response = client.post("/recipes", json=recipe_data)
     recipe_id = create_response.json()["id"]
@@ -80,7 +80,7 @@ def test_create_recipe_validation_error():
         "name": "",  # пустое название
         "cooking_time": 0,  # нулевое время
         "ingredients": "",
-        "description": ""
+        "description": "",
     }
 
     response = client.post("/recipes", json=invalid_data)
