@@ -1,10 +1,11 @@
-import sys
 import os
+import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # flake8: noqa: E402
 from fastapi.testclient import TestClient
+
 from database import Base, engine
 from main import app
 
