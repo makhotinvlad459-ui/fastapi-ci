@@ -1,13 +1,14 @@
-from fastapi import FastAPI, Depends, HTTPException, status
-from fastapi.responses import JSONResponse
-from sqlalchemy.orm import Session
-from schemas import RecipeCreate, RecipeDetail, RecipeListItem, RecipeUpdate
-from fastapi import FastAPI
-from models import Recipe
-from typing import List, AsyncIterator
 from contextlib import asynccontextmanager
-from database import get_db, create_tables, SessionLocal
-from sqlalchemy import desc, asc
+from typing import AsyncIterator, List
+
+from fastapi import Depends, FastAPI, HTTPException, status
+from sqlalchemy import asc, desc
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
+
+from database import SessionLocal, create_tables, get_db
+from models import Recipe
+from schemas import RecipeCreate, RecipeDetail, RecipeListItem, RecipeUpdate
 
 
 @asynccontextmanager
@@ -29,14 +30,28 @@ async def init_database():
                 Recipe(
                     name="Спагетти Карбонара",
                     cooking_time=20,
-                    ingredients="Спагетти - 200г, Бекон - 150г, Яйца - 2 шт, Сыр Пармезан - 50г, Чеснок - 2 зубчика, Соль, Перец",
-                    description="Классическое итальянское блюдо с беконом и сырным соусом. Приготовьте пасту аль денте, обжарьте бекон с чесноком, смешайте с яйцами и сыром.",
+                    ingredients=(
+                        "Спагетти - 200г, Бекон - 150г, Яйца - 2 шт, "
+                        "Сыр Пармезан - 50г, Чеснок - 2 зубчика, Соль, Перец"
+                    ),
+                    description=(
+                        "Классическое итальянское блюдо с беконом и сырным соусом. "
+                        "Приготовьте пасту аль денте, обжарьте бекон с чесноком, "
+                        "смешайте с яйцами и сыром."
+                    ),
                 ),
                 Recipe(
                     name="Шоколадный торт",
                     cooking_time=90,
-                    ingredients="Мука - 200г, Какао - 50г, Сахар - 200г, Яйца - 3 шт, Сливочное масло - 150г, Разрыхлитель - 1 ч.л., Сметана - 100г",
-                    description="Нежный шоколадный торт для настоящих сладкоежек. Смешайте сухие ингредиенты, добавьте яйца и масло, выпекайте 40 минут при 180°C.",
+                    ingredients=(
+                        "Мука - 200г, Какао - 50г, Сахар - 200г, Яйца - 3 шт, "
+                        "Сливочное масло - 150г, Разрыхлитель - 1 ч.л., Сметана - 100г"
+                    ),
+                    description=(
+                        "Нежный шоколадный торт для настоящих сладкоежек. "
+                        "Смешайте сухие ингредиенты, добавьте яйца и масло, "
+                        "выпекайте 40 минут при 180°C."
+                    ),
                 ),
             ]
             db.add_all(sample_recipes)
@@ -45,7 +60,7 @@ async def init_database():
         else:
             recipe_count = db.query(Recipe).count()
             print(f"В базе данных уже есть {recipe_count} рецептов")
-    except Exception as e:
+    except SQLAlchemyError as e:
         print(f"Ошибка инициализации - {e}")
         db.rollback()
     finally:
@@ -97,7 +112,7 @@ def get_recipes(db: Session = Depends(get_db)):
             .all()
         )
         return recipes
-    except Exception as e:
+    except SQLAlchemyError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Ошибка получения данных - {str(e)}",
@@ -114,7 +129,7 @@ def get_recipe(recipe_id: int, db: Session = Depends(get_db)):
     recipe = db.query(Recipe).filter(Recipe.id == recipe_id).first()
     if not recipe:
         raise HTTPException(404, detail="Рецепт не найден")
-    recipe.views += 1
+    recipe.views += 1  # type: ignore
     db.commit()
     return recipe
 
@@ -127,11 +142,11 @@ def get_recipe(recipe_id: int, db: Session = Depends(get_db)):
     tags=["Рецепты"],
 )
 def create_recipe(recipe: RecipeCreate, db: Session = Depends(get_db)):
-    db_recipe = Recipe(**recipe.model_dump())
-    db.add(db_recipe)
+    new_recipe = Recipe(**recipe.model_dump())
+    db.add(new_recipe)
     db.commit()
-    db.refresh(db_recipe)
-    return db_recipe
+    db.refresh(new_recipe)
+    return new_recipe
 
 
 @app.put(
@@ -139,7 +154,7 @@ def create_recipe(recipe: RecipeCreate, db: Session = Depends(get_db)):
     response_model=RecipeDetail,
     summary="Обновить рецепт",
     description="""
-    Обновляет существующий рецепт. 
+    Обновляет существующий рецепт.
     Все поля опциональны - обновляются только переданные поля.
     """,
     tags=["Рецепты"],

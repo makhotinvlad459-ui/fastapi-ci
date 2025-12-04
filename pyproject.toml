@@ -12,6 +12,9 @@ python_version = "3.12"
 [[tool.mypy.overrides]]
 module = [
     "sqlalchemy.*",
+    "sqlalchemy.orm.*",
+    "sqlalchemy.ext.*",
     "pydantic.*"
 ]
 ignore_missing_imports = true
+disable_error_code = ["assignment"]

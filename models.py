@@ -1,7 +1,9 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, func
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, DateTime, Integer, String, Text, func
+from sqlalchemy.orm import DeclarativeBase
 
-Base = declarative_base()
+
+class Base(DeclarativeBase):
+    pass
 
 
 class Recipe(Base):
@@ -18,14 +20,3 @@ class Recipe(Base):
     updated_at = Column(
         DateTime, default=func.now(), onupdate=func.now(), nullable=False
     )
-
-
-# TODO В данном проекте намного удобнее использовать две таблицы, соединённые с помощью поля "внешний ключ": Receipt и
-#  Ingredient. В таблице Ingredient храним ингредиенты рецептов, одна запись - один ингредиент, состав полей модели
-#  примерно такой:
-#  - внешний ключ на таблицу Рецепт
-#  - название ингредиента
-#  - количество ингредиента
-#  - единица измерения
-#  - примечание (описание)
-#  Можно добавить ещё полей по желанию. А вот дублировать "время приготовления"
